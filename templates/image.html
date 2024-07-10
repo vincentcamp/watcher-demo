@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ item.tn }}</title>
+</head>
+<body>
+    <h1>{{ item.tn }}</h1>
+    <img src="{{ item.image_url }}" alt="{{ item.content }}">
+    <h2>Details:</h2>
+    <ul>
+        {% for key, value in item.items() %}
+            <li><strong>{{ key }}:</strong> {{ value }}</li>
+        {% endfor %}
+    </ul>
+    <a href="/">Back to Index</a>
+</body>
+</html>
