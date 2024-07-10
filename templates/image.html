@@ -4,16 +4,213 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ item.tn }}</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.0/p5.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f0f0f0;
+        }
+        canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            z-index: -1;
+        }
+        .content {
+            background-color: rgba(255, 255, 255, 0.8);
+            padding: 20px;
+            border-radius: 10px;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        img {
+            max-width: 100%;
+            height: auto;
+        }
+    </style>
 </head>
 <body>
-    <h1>{{ item.tn }}</h1>
-    <img src="{{ item.image_url }}" alt="{{ item.content }}">
-    <h2>Details:</h2>
-    <ul>
-        {% for key, value in item.items() %}
-            <li><strong>{{ key }}:</strong> {{ value }}</li>
-        {% endfor %}
-    </ul>
-    <a href="/">Back to Index</a>
+    <div class="content">
+        <h1>{{ item.tn }}</h1>
+        <img src="{{ item.image_url }}" alt="{{ item.content }}">
+        <h2>Details:</h2>
+        <ul>
+            {% for key, value in item.items() %}
+                <li><strong>{{ key }}:</strong> {{ value }}</li>
+            {% endfor %}
+        </ul>
+        <a href="/">Back to Index</a>
+    </div>
+
+    <script>
+        let particles = [];
+        let pixelSteps = 6;
+        let drawAsPoints = true;
+        let words = ["{{ particle_text }}"];
+        let wordIndex = 0;
+        let bgColor;
+
+        function setup() {
+            createCanvas(windowWidth, windowHeight);
+            bgColor = color(255, 0);
+            textFont('Helvetica');
+            nextWord(words[wordIndex]);
+        }
+
+        function draw() {
+            // Background & motion blur
+            background(bgColor);
+
+            for (let i = particles.length - 1; i >= 0; i--) {
+                let particle = particles[i];
+                particle.move();
+                particle.draw();
+
+                // Remove any dead pixels out of bounds
+                if (particle.isKilled) {
+                    if (particle.pos.x < 0 || particle.pos.x > width || particle.pos.y < 0 || particle.pos.y > height) {
+                        particles.splice(i, 1);
+                    }
+                }
+            }
+
+            update();
+        }
+
+        function update() {
+            if (frameCount % 240 === 0) {
+                wordIndex = (wordIndex + 1) % words.length;
+                nextWord(words[wordIndex]);
+            }
+        }
+
+        class Particle {
+            constructor() {
+                this.pos = createVector(0, 0);
+                this.vel = createVector(0, 0);
+                this.acc = createVector(0, 0);
+                this.target = createVector(0, 0);
+
+                this.closeEnoughTarget = 50;
+                this.maxSpeed = 4;
+                this.maxForce = 0.2;
+                this.particleSize = 5;
+                this.isKilled = false;
+
+                this.startColor = color(0);
+                this.targetColor = color(0);
+                this.colorWeight = 0;
+                this.colorBlendRate = 0.025;
+            }
+
+            move() {
+                let proximityMult = 1;
+                let distance = dist(this.pos.x, this.pos.y, this.target.x, this.target.y);
+                if (distance < this.closeEnoughTarget) {
+                    proximityMult = distance / this.closeEnoughTarget;
+                }
+
+                let towardsTarget = p5.Vector.sub(this.target, this.pos);
+                towardsTarget.normalize();
+                towardsTarget.mult(this.maxSpeed * proximityMult);
+
+                let steer = p5.Vector.sub(towardsTarget, this.vel);
+                steer.normalize();
+                steer.mult(this.maxForce);
+                this.acc.add(steer);
+
+                this.vel.add(this.acc);
+                this.pos.add(this.vel);
+                this.acc.mult(0);
+            }
+
+            draw() {
+                let currentColor = lerpColor(this.startColor, this.targetColor, this.colorWeight);
+                if (drawAsPoints) {
+                    stroke(currentColor);
+                    point(this.pos.x, this.pos.y);
+                } else {
+                    noStroke();
+                    fill(currentColor);
+                    ellipse(this.pos.x, this.pos.y, this.particleSize, this.particleSize);
+                }
+
+                if (this.colorWeight < 1.0) {
+                    this.colorWeight = min(this.colorWeight + this.colorBlendRate, 1.0);
+                }
+            }
+
+            kill() {
+                if (!this.isKilled) {
+                    this.target = createVector(random(width), random(height));
+                    this.startColor = lerpColor(this.startColor, this.targetColor, this.colorWeight);
+                    this.targetColor = color(0);
+                    this.colorWeight = 0;
+                    this.isKilled = true;
+                }
+            }
+        }
+
+        function nextWord(word) {
+            let pg = createGraphics(width, height);
+            pg.background(255, 0);
+            pg.fill(0);
+            pg.textSize(100);
+            pg.textAlign(CENTER, CENTER);
+            pg.text(word, width/2, height/2);
+            pg.loadPixels();
+
+            let newColor = color(random(255), random(255), random(255));
+
+            let coordsIndexes = [];
+            for (let i = 0; i < (width * height) - 1; i += pixelSteps) {
+                coordsIndexes.push(i);
+            }
+
+            let particleCount = particles.length;
+            let particleIndex = 0;
+
+            while (coordsIndexes.length > 0 && particleIndex < 1000) {
+                let randomIndex = floor(random(coordsIndexes.length));
+                let coordIndex = coordsIndexes[randomIndex];
+                coordsIndexes.splice(randomIndex, 1);
+
+                if (pg.pixels[coordIndex * 4] < 128) {
+                    let x = coordIndex % width;
+                    let y = floor(coordIndex / width);
+
+                    let newParticle;
+                    if (particleIndex < particleCount) {
+                        newParticle = particles[particleIndex];
+                        newParticle.isKilled = false;
+                    } else {
+                        newParticle = new Particle();
+                        let randomPos = p5.Vector.random2D();
+                        randomPos.mult(width > height ? width : height);
+                        newParticle.pos = createVector(width/2, height/2).add(randomPos);
+                        particles.push(newParticle);
+                    }
+
+                    newParticle.startColor = lerpColor(newParticle.startColor, newParticle.targetColor, newParticle.colorWeight);
+                    newParticle.targetColor = newColor;
+                    newParticle.colorWeight = 0;
+                    newParticle.target = createVector(x, y);
+
+                    particleIndex++;
+                }
+            }
+
+            for (let i = particleIndex; i < particleCount; i++) {
+                particles[i].kill();
+            }
+        }
+
+        function windowResized() {
+            resizeCanvas(windowWidth, windowHeight);
+            nextWord(words[wordIndex]);
+        }
+    </script>
 </body>
 </html>
