@@ -1,6 +1,7 @@
 from flask import Flask, render_template, request, jsonify
 from pymongo import MongoClient
 from bson import ObjectId
+from datetime import datetime, timedelta
 import os
 import logging
 
@@ -33,29 +34,41 @@ def standardize_data(item):
         if isinstance(payload, str):
             payload = json.loads(payload)
         
-        return {
+        standardized = {
             "_id": item.get('_id', str(ObjectId())),
             "tlid": payload.get('tlid'),
             "tn": payload.get('tn'),
             "content": payload.get('content'),
             "image_url": payload.get('image_url'),
-            "timestamp": payload.get('timestamp'),
+            "timestamp": item.get('timestamp') or payload.get('timestamp'),
+            "formatted_timestamp": format_timestamp(item.get('timestamp') or payload.get('timestamp')),
             "orgId": payload.get('orgId'),
             "eui": payload.get('eui'),
             "channel": payload.get('channel')
         }
     else:
-        return {
+        standardized = {
             "_id": item.get('_id', str(ObjectId())),
             "tlid": item.get('tlid'),
             "tn": item.get('tn'),
             "content": item.get('content'),
             "image_url": item.get('image_url'),
             "timestamp": item.get('timestamp'),
+            "formatted_timestamp": format_timestamp(item.get('timestamp')),
             "orgId": item.get('orgId'),
             "eui": item.get('eui'),
             "channel": item.get('channel')
         }
+    
+    return standardized
+    
+def format_timestamp(timestamp):
+    if timestamp:
+        timestamp_seconds = timestamp / 1000.0
+        dt_utc = datetime.utcfromtimestamp(timestamp_seconds)
+        dt_china = dt_utc + timedelta(hours=8)
+        return dt_china.strftime("%Y-%m-%d %H:%M:%S CST")
+    return None
 
 @app.route('/', methods=['GET'])
 def index():

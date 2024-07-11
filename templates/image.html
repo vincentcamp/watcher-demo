@@ -81,10 +81,14 @@
         <h2>Details:</h2>
         <ul>
             {% for key, value in item.items() %}
-                <li><strong>{{ key }}:</strong> {{ value }}</li>
+                {% if key == 'timestamp' %}
+                    <li><strong>{{ key }}:</strong> {{ value }} ({{ item.formatted_timestamp }})</li>
+                {% else %}
+                    <li><strong>{{ key }}:</strong> {{ value }}</li>
+                {% endif %}
             {% endfor %}
         </ul>
-        <a href="/">Back to Index</a>
+        <a href="/">Back to Index</a>        
     </div>
 
     <script>
