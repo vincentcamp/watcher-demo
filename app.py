@@ -10,7 +10,7 @@ data = [{
     "tlid": 3,
     "tn": "Local Human Detection",
     "content": "human detected",
-    "image_url": "https://sensecraft-statics.seeed.cc/mperdoidau/ZplS3rqt3akc7gIPRGmq/se…",
+    "image_url": "https://sensecraft-statics.seeed.cc/mperdoidau/ZplS3rqt3akc7gIPRGmq/secret_AHCjazlbeB3PRSof.jpeg",
     "timestamp": 1720592406130,
     "orgId": 440599875707904,
     "eui": "2CF7F1C9627000A7",
