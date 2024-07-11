@@ -19,8 +19,8 @@ if not MONGODB_URI:
 try:
     client = MongoClient(MONGODB_URI, serverSelectionTimeoutMS=5000)
     client.server_info()
-    db = client.get_default_database()
-    collection = db.images
+    db = client['watcher_db']
+    collection = db['images']
     logger.info("Successfully connected to MongoDB")
 except Exception as e:
     logger.error(f"Failed to connect to MongoDB: {e}")
