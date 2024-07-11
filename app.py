@@ -1,6 +1,8 @@
 from flask import Flask, render_template, request, jsonify
 from pymongo import MongoClient
 from bson import ObjectId
+from datetime import datetime
+from pytz import timezone
 import os
 import logging
 
@@ -27,35 +29,51 @@ except Exception as e:
     raise
 
 def standardize_data(item):
-    """Standardize the data format to match Image 1 layout."""
+    """Standardize the data format and convert timestamp."""
     if 'payload' in item:
         payload = item['payload']
         if isinstance(payload, str):
             payload = json.loads(payload)
         
+        # Convert timestamp
+        timestamp = payload.get('timestamp')
+        date_formatted = convert_timestamp(timestamp)
+
         return {
             "_id": item.get('_id', str(ObjectId())),
             "tlid": payload.get('tlid'),
             "tn": payload.get('tn'),
             "content": payload.get('content'),
             "image_url": payload.get('image_url'),
-            "timestamp": payload.get('timestamp'),
+            "timestamp": date_formatted,  # Store the formatted date
             "orgId": payload.get('orgId'),
             "eui": payload.get('eui'),
             "channel": payload.get('channel')
         }
     else:
+        # Convert timestamp for non-payload data
+        timestamp = item.get('timestamp')
+        date_formatted = convert_timestamp(timestamp)
+
         return {
             "_id": item.get('_id', str(ObjectId())),
             "tlid": item.get('tlid'),
             "tn": item.get('tn'),
             "content": item.get('content'),
             "image_url": item.get('image_url'),
-            "timestamp": item.get('timestamp'),
+            "timestamp": date_formatted,
             "orgId": item.get('orgId'),
             "eui": item.get('eui'),
             "channel": item.get('channel')
         }
+
+def convert_timestamp(ts):
+    """Convert Unix timestamp in milliseconds to formatted date string."""
+    if ts is not None:
+        tz = timezone('Asia/Shanghai')
+        dt = datetime.utcfromtimestamp(ts / 1000.0).replace(tzinfo=timezone('UTC')).astimezone(tz)
+        return dt.strftime('%Y-%m-%d %H:%M:%S')
+    return None
 
 @app.route('/', methods=['GET'])
 def index():
