@@ -72,6 +72,17 @@
             height: 100%;
             pointer-events: none;
             z-index: 9999;
+            border: 2px solid red;
+        }
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
     </style>
 </head>
@@ -95,25 +106,42 @@
             {% endif %}
         </div>
     </div>
-    <style>
-        @keyframes fadeInUp {
-            from {
-                opacity: 0;
-                transform: translateY(20px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-    </style>
     <script>
         document.addEventListener('DOMContentLoaded', () => {
+            // Original card animation
             const cards = document.querySelectorAll('.card');
             cards.forEach((card, index) => {
                 card.style.animationDelay = `${index * 0.1}s`;
                 card.style.animation = 'fadeInUp 0.5s ease forwards';
             });
+
+            // New debug drawing on canvas
+            const canvas = document.getElementById('firefly-canvas');
+            const ctx = canvas.getContext('2d');
+            
+            // Set canvas size
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+
+            // Draw a red circle that follows the mouse
+            let mouseX = 0;
+            let mouseY = 0;
+
+            canvas.addEventListener('mousemove', (e) => {
+                mouseX = e.clientX;
+                mouseY = e.clientY;
+            });
+
+            function drawCircle() {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                ctx.beginPath();
+                ctx.arc(mouseX, mouseY, 10, 0, 2 * Math.PI);
+                ctx.fillStyle = 'red';
+                ctx.fill();
+                requestAnimationFrame(drawCircle);
+            }
+
+            drawCircle();
         });
     </script>
     <script type="module" src="firefly-cursor.js"></script>
