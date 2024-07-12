@@ -14,7 +14,8 @@ let BORN_AMOUNT = 0
 let ol
 
 function initFireflyCursor() {
-    ol = Olon(window.innerWidth, window.innerHeight, true)
+    const canvas = document.getElementById('firefly-canvas')
+    ol = Olon(canvas)
 
     ol.blend({ sfactor: ol.SRC_ALPHA, dfactor: ol.ONE })
     ol.enableBlend()
@@ -101,7 +102,7 @@ function initFireflyCursor() {
             ol.trianglesInstanced(0, 6, BORN_AMOUNT)
         })
 
-        [read, write] = [write, read]
+        ;[read, write] = [write, read]
     })
 }
 
