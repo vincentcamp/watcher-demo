@@ -1,11 +1,12 @@
-from flask import Flask, render_template, request, jsonify
+from flask import Flask, render_template, request, jsonify, send_from_directory
 from pymongo import MongoClient
 from bson import ObjectId
 from datetime import datetime, timedelta
 import os
 import logging
+import json
 
-app = Flask(__name__)
+app = Flask(__name__, static_folder='public')
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)
@@ -70,22 +71,30 @@ def format_timestamp(timestamp):
         return dt_china.strftime("%Y-%m-%d %H:%M:%S CST")
     return None
 
-@app.route('/', methods=['GET'])
+@app.route('/')
 def index():
+    return send_from_directory(app.static_folder, 'index.html')
+
+@app.route('/<path:path>')
+def static_proxy(path):
+    return send_from_directory(app.static_folder, path)
+
+@app.route('/api/', methods=['GET'])
+def api_index():
     items = list(collection.find())
     standardized_items = [standardize_data(item) for item in items]
     links = [f"/image/{str(item['_id'])}" for item in standardized_items]
-    return render_template('index.html', links=links, items=standardized_items)
+    return jsonify({'links': links, 'items': standardized_items})
 
-@app.route('/image/<id>', methods=['GET'])
+@app.route('/api/image/<id>', methods=['GET'])
 def image_page(id):
     item = collection.find_one({'_id': ObjectId(id)})
     if item:
         standardized_item = standardize_data(item)
-        return render_template('image.html', item=standardized_item, particle_text=standardized_item.get('content', ''))
-    return "Image not found", 404
+        return jsonify(standardized_item)
+    return jsonify({"error": "Image not found"}), 404
 
-@app.route('/receive_data', methods=['POST'])
+@app.route('/api/receive_data', methods=['POST'])
 def receive_data():
     if request.method == 'POST':
         new_data = request.json
@@ -93,13 +102,13 @@ def receive_data():
         result = collection.insert_one(standardized_data)
         return jsonify({"status": "success", "message": "Data received", "id": str(result.inserted_id)}), 200
 
-@app.route('/test', methods=['GET'])
+@app.route('/api/test', methods=['GET'])
 def test():
     items = list(collection.find())
     standardized_items = [standardize_data(item) for item in items]
     return jsonify(standardized_items)
 
-@app.route('/debug')
+@app.route('/api/debug')
 def debug():
     items = list(collection.find())
     standardized_items = [standardize_data(item) for item in items]
