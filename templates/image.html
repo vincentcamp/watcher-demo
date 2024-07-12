@@ -11,21 +11,33 @@
             margin: 0;
             padding: 0;
             font-family: 'Roboto', sans-serif;
-            background-color: #1a1a1a;
+            background-color: transparent;
             color: #ffffff;
+            height: 100%;
+            overflow: auto;
         }
-        canvas {
+        #p5-container {
             position: fixed;
             top: 0;
             left: 0;
+            width: 100%;
+            height: 100%;
             z-index: -1;
+        }
+        .content-wrapper {
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            min-height: 100vh;
+            padding: 40px 20px;
+            box-sizing: border-box;
         }
         .content {
             background-color: rgba(26, 26, 26, 0.8);
             padding: 40px;
             border-radius: 15px;
             max-width: 800px;
-            margin: 40px auto;
+            width: 100%;
             box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
             transition: all 0.3s ease;
         }
@@ -99,30 +111,33 @@
     </style>
 </head>
 <body>
-    <div class="content">
-        <h1>{{ item.tn }}</h1>
-        <img src="{{ item.image_url }}" alt="{{ item.content }}">
-        <p><strong>Content:</strong> {{ item.content }}</p>
-        
-        <div class="dropdown">
-            <button class="dropdown-toggle" onclick="toggleDropdown()">More Info</button>
-            <div id="dropdownContent" class="dropdown-content">
-                <h2>Details:</h2>
-                <ul>
-                    {% for key, value in item.items() %}
-                        {% if key not in ['tn', 'image_url', 'content'] %}
-                            {% if key == 'timestamp' %}
-                                <li><strong>{{ key }}:</strong> {{ value }} ({{ item.formatted_timestamp }})</li>
-                            {% else %}
-                                <li><strong>{{ key }}:</strong> {{ value }}</li>
+    <div id="p5-container"></div>
+    <div class="content-wrapper">
+        <div class="content">
+            <h1>{{ item.tn }}</h1>
+            <img src="{{ item.image_url }}" alt="{{ item.content }}">
+            <p><strong>Content:</strong> {{ item.content }}</p>
+            
+            <div class="dropdown">
+                <button class="dropdown-toggle" onclick="toggleDropdown()">More Info</button>
+                <div id="dropdownContent" class="dropdown-content">
+                    <h2>Details:</h2>
+                    <ul>
+                        {% for key, value in item.items() %}
+                            {% if key not in ['tn', 'image_url', 'content'] %}
+                                {% if key == 'timestamp' %}
+                                    <li><strong>{{ key }}:</strong> {{ value }} ({{ item.formatted_timestamp }})</li>
+                                {% else %}
+                                    <li><strong>{{ key }}:</strong> {{ value }}</li>
+                                {% endif %}
                             {% endif %}
-                        {% endif %}
-                    {% endfor %}
-                </ul>
+                        {% endfor %}
+                    </ul>
+                </div>
             </div>
+            
+            <a href="/">Back to Index</a>        
         </div>
-        
-        <a href="/">Back to Index</a>        
     </div>
 
     <script>
@@ -139,8 +154,9 @@
         let bgColor;
 
         function setup() {
-            createCanvas(windowWidth, windowHeight);
-            bgColor = color(255, 0);
+            let canvas = createCanvas(windowWidth, windowHeight);
+            canvas.parent('p5-container');
+            bgColor = color(26, 26, 26);
             textFont('Helvetica');
             nextWord(words[wordIndex]);
         }
