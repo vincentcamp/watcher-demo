@@ -9,7 +9,7 @@ import json
 app = Flask(__name__, static_folder='public')
 
 # Set up logging
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
 # MongoDB Atlas connection
@@ -73,11 +73,17 @@ def format_timestamp(timestamp):
 
 @app.route('/')
 def index():
+    logger.debug(f"Serving index.html from {app.static_folder}")
     return send_from_directory(app.static_folder, 'index.html')
 
 @app.route('/<path:path>')
 def static_proxy(path):
-    return send_from_directory(app.static_folder, path)
+    logger.debug(f"Attempting to serve static file: {path}")
+    try:
+        return send_from_directory(app.static_folder, path)
+    except Exception as e:
+        logger.error(f"Failed to serve static file {path}: {e}")
+        return f"File not found: {path}", 404
 
 @app.route('/api/', methods=['GET'])
 def api_index():
@@ -115,4 +121,7 @@ def debug():
     return jsonify(standardized_items)
 
 if __name__ == '__main__':
+    logger.info(f"Static folder is set to: {app.static_folder}")
+    logger.info(f"Current working directory: {os.getcwd()}")
+    logger.info(f"Contents of static folder: {os.listdir(app.static_folder)}")
     app.run(debug=True)
