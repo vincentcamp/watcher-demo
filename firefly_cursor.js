@@ -31,13 +31,26 @@ function initFireflyCursor() {
         return;
     }
 
-    ol.blend({ sfactor: ol.SRC_ALPHA, dfactor: ol.ONE });
-    ol.enableBlend();
+    try {
+        ol.blend({ sfactor: ol.SRC_ALPHA, dfactor: ol.ONE });
+        ol.enableBlend();
+        console.log("Blend mode set");
+    } catch (error) {
+        console.error("Error setting blend mode:", error);
+        return;
+    }
 
     console.log("Creating shader programs");
     const TFV = ["vPosition", "vAge", "vLife", "vVel"];
-    const updateProgram = ol.createProgram(UPDATE_VERT, UPDATE_FRAG, TFV);
-    const renderProgram = ol.createProgram(RENDER_VERT, RENDER_FRAG);
+    let updateProgram, renderProgram;
+    try {
+        updateProgram = ol.createProgram(UPDATE_VERT, UPDATE_FRAG, TFV);
+        renderProgram = ol.createProgram(RENDER_VERT, RENDER_FRAG);
+        console.log("Shader programs created successfully");
+    } catch (error) {
+        console.error("Error creating shader programs:", error);
+        return;
+    }
 
     console.log("Setting up attributes and buffers");
     const aPosition = { name: "aPosition", unit: "f32", size: 2 };
@@ -59,22 +72,36 @@ function initFireflyCursor() {
     const initData = ol.Data(particleData);
     const quadData = ol.quadData();
 
-    const buffer0 = ol.createBuffer(initData, ol.STREAM_DRAW);
-    const buffer1 = ol.createBuffer(initData, ol.STREAM_DRAW);
-    const quadBuffer = ol.createBuffer(quadData, ol.STATIC_DRAW);
+    let buffer0, buffer1, quadBuffer;
+    try {
+        buffer0 = ol.createBuffer(initData, ol.STREAM_DRAW);
+        buffer1 = ol.createBuffer(initData, ol.STREAM_DRAW);
+        quadBuffer = ol.createBuffer(quadData, ol.STATIC_DRAW);
+        console.log("Buffers created successfully");
+    } catch (error) {
+        console.error("Error creating buffers:", error);
+        return;
+    }
 
     console.log("Creating VAOs");
     const VAOConfig = (buffer, stride, attributes, divisor) => ({ buffer, stride, attributes, divisor });
-    const updateVAO0 = ol.createVAO(updateProgram, [VAOConfig(buffer0, 4 * 6, updateAttribs)]);
-    const updateVAO1 = ol.createVAO(updateProgram, [VAOConfig(buffer1, 4 * 6, updateAttribs)]);
-    const renderVAO0 = ol.createVAO(renderProgram, [
-        VAOConfig(buffer0, 4 * 6, renderAttribs, 1),
-        VAOConfig(quadBuffer, 4 * 4, quadAttribs),
-    ]);
-    const renderVAO1 = ol.createVAO(renderProgram, [
-        VAOConfig(buffer1, 4 * 6, renderAttribs, 1),
-        VAOConfig(quadBuffer, 4 * 4, quadAttribs),
-    ]);
+    let updateVAO0, updateVAO1, renderVAO0, renderVAO1;
+    try {
+        updateVAO0 = ol.createVAO(updateProgram, [VAOConfig(buffer0, 4 * 6, updateAttribs)]);
+        updateVAO1 = ol.createVAO(updateProgram, [VAOConfig(buffer1, 4 * 6, updateAttribs)]);
+        renderVAO0 = ol.createVAO(renderProgram, [
+            VAOConfig(buffer0, 4 * 6, renderAttribs, 1),
+            VAOConfig(quadBuffer, 4 * 4, quadAttribs),
+        ]);
+        renderVAO1 = ol.createVAO(renderProgram, [
+            VAOConfig(buffer1, 4 * 6, renderAttribs, 1),
+            VAOConfig(quadBuffer, 4 * 4, quadAttribs),
+        ]);
+        console.log("VAOs created successfully");
+    } catch (error) {
+        console.error("Error creating VAOs:", error);
+        return;
+    }
 
     const buffers = [buffer0, buffer1];
     const updateVAOs = [updateVAO0, updateVAO1];
@@ -96,27 +123,31 @@ function initFireflyCursor() {
         ol.clearColor(0, 0, 0, 0);
         ol.clearDepth();
 
-        ol.use({
-            program: updateProgram,
-        }).run(() => {
-            ol.transformFeedback(updateVAOs[read], buffers[write], ol.POINTS, () => {
-                ol.uniform("uMouse", [mouseX, mouseY]);
-                ol.uniform("uSpeed", SPEED);
-                ol.uniform("uTime", ol.frame / 60);
-                ol.uniform("uScale", ol.width / ol.height);
-                ol.points(0, BORN_AMOUNT);
+        try {
+            ol.use({
+                program: updateProgram,
+            }).run(() => {
+                ol.transformFeedback(updateVAOs[read], buffers[write], ol.POINTS, () => {
+                    ol.uniform("uMouse", [mouseX, mouseY]);
+                    ol.uniform("uSpeed", SPEED);
+                    ol.uniform("uTime", ol.frame / 60);
+                    ol.uniform("uScale", ol.width / ol.height);
+                    ol.points(0, BORN_AMOUNT);
+                });
             });
-        });
 
-        ol.use({
-            VAO: renderVAOs[read],
-            program: renderProgram,
-        }).run(() => {
-            ol.uniform("uScale", ol.width / ol.height);
-            ol.trianglesInstanced(0, 6, BORN_AMOUNT);
-        });
+            ol.use({
+                VAO: renderVAOs[read],
+                program: renderProgram,
+            }).run(() => {
+                ol.uniform("uScale", ol.width / ol.height);
+                ol.trianglesInstanced(0, 6, BORN_AMOUNT);
+            });
 
-        [read, write] = [write, read];
+            [read, write] = [write, read];
+        } catch (error) {
+            console.error("Error in render loop:", error);
+        }
     });
 
     console.log("Firefly cursor initialized");

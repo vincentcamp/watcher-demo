@@ -12,7 +12,7 @@
             font-family: 'Roboto', sans-serif;
             background-color: #1a1a1a;
             color: #ffffff;
-            overflow: hidden; /* Prevent scrollbars */
+            overflow: hidden;
         }
         .container {
             max-width: 1200px;
@@ -88,6 +88,7 @@
 </head>
 <body>
     <canvas id="firefly-canvas"></canvas>
+    <canvas id="webgl-test" style="position: fixed; top: 10px; left: 10px; z-index: 10000;"></canvas>
     <div class="container">
         <h1>Watcher Index</h1>
         <div class="grid">
@@ -142,6 +143,19 @@
             }
 
             drawCircle();
+
+            // WebGL test
+            const testCanvas = document.getElementById('webgl-test');
+            testCanvas.width = 100;
+            testCanvas.height = 100;
+            const gl = testCanvas.getContext('webgl2');
+            if (gl) {
+                gl.clearColor(1.0, 0.0, 0.0, 1.0);
+                gl.clear(gl.COLOR_BUFFER_BIT);
+                console.log("WebGL2 is supported and working");
+            } else {
+                console.error("WebGL2 is not supported");
+            }
         });
     </script>
     <script type="module" src="firefly-cursor.js"></script>
