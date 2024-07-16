@@ -1,9 +1,3 @@
-console.log("Firefly cursor script loaded");
-
-import * as Shox from "https://cdn.jsdelivr.net/npm/shox@1.1.3/src/Shox.js"
-import Olon from "https://cdn.jsdelivr.net/npm/olon@0.2.4/dist/Olon.min.js"
-import { UPDATE_VERT, UPDATE_FRAG, RENDER_VERT, RENDER_FRAG } from "./shader.js"
-import { random, min } from "./tools.js"
 
 const COLS = 80;
 const ROWS = 80;
@@ -32,11 +26,13 @@ function initFireflyCursor() {
         ol.enableBlend();
         console.log("Blend mode set");
 
+        console.log("Creating shader programs");
         const TFV = ["vPosition", "vAge", "vLife", "vVel"];
         const updateProgram = ol.createProgram(UPDATE_VERT, UPDATE_FRAG, TFV);
         const renderProgram = ol.createProgram(RENDER_VERT, RENDER_FRAG);
         console.log("Shader programs created successfully");
 
+        console.log("Setting up attributes and buffers");
         const aPosition = { name: "aPosition", unit: "f32", size: 2 };
         const aAge = { name: "aAge", unit: "f32", size: 1 };
         const aLife = { name: "aLife", unit: "f32", size: 1 };
@@ -118,22 +114,22 @@ function initFireflyCursor() {
         });
 
         console.log("Firefly cursor initialized");
+
+        // Set up resize event listener
+        window.addEventListener('resize', handleResize);
     } catch (error) {
         console.error("Error in firefly cursor initialization:", error);
     }
 }
 
-// Expose the function to the global scope
-window.initFireflyCursor = initFireflyCursor;
-
-window.addEventListener('load', () => {
-    console.log("Window loaded, initializing firefly cursor");
-    initFireflyCursor();
-});
-
-window.addEventListener('resize', () => {
-    if (ol) {
+function handleResize() {
+    if (ol && typeof ol.resize === 'function') {
         console.log("Resizing canvas");
         ol.resize(window.innerWidth, window.innerHeight);
+    } else {
+        console.error("Unable to resize: ol object not properly initialized or resize method not available");
     }
-});
+}
+
+// Expose the function to the global scope
+window.initFireflyCursor = initFireflyCursor;
