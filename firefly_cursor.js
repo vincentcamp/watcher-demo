@@ -15,7 +15,7 @@ let BORN_AMOUNT = 0;
 
 let ol;
 
-function initFireflyCursor() {
+async function initFireflyCursor() {
     console.log("Starting initFireflyCursor function");
     const canvas = document.getElementById('firefly-canvas');
     console.log("Canvas element:", canvas);
@@ -25,6 +25,11 @@ function initFireflyCursor() {
     }
     
     try {
+        // Ensure Olon is loaded
+        if (typeof Olon !== 'function') {
+            throw new Error("Olon library not loaded properly");
+        }
+
         ol = Olon(canvas);
         if (!ol) {
             throw new Error("Failed to initialize Olon");
