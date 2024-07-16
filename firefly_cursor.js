@@ -1,3 +1,9 @@
+console.log("Firefly cursor script loaded");
+
+import * as Shox from "https://cdn.jsdelivr.net/npm/shox@1.1.3/src/Shox.js"
+import Olon from "https://cdn.jsdelivr.net/npm/olon@0.2.4/dist/Olon.min.js"
+import { UPDATE_VERT, UPDATE_FRAG, RENDER_VERT, RENDER_FRAG } from "./shader.js"
+import { random, min } from "./tools.js"
 
 const COLS = 80;
 const ROWS = 80;
@@ -20,7 +26,15 @@ function initFireflyCursor() {
     
     try {
         ol = Olon(canvas);
+        if (!ol) {
+            throw new Error("Failed to initialize Olon");
+        }
         console.log("Olon initialized");
+
+        // Check if necessary methods exist
+        if (typeof ol.blend !== 'function' || typeof ol.enableBlend !== 'function' || typeof ol.createProgram !== 'function') {
+            throw new Error("Olon object is missing required methods");
+        }
 
         ol.blend({ sfactor: ol.SRC_ALPHA, dfactor: ol.ONE });
         ol.enableBlend();
@@ -133,3 +147,17 @@ function handleResize() {
 
 // Expose the function to the global scope
 window.initFireflyCursor = initFireflyCursor;
+
+// Use a more robust initialization process
+function ensureScriptLoaded(callback) {
+    if (document.readyState === 'complete') {
+        callback();
+    } else {
+        window.addEventListener('load', callback);
+    }
+}
+
+ensureScriptLoaded(() => {
+    console.log("Document fully loaded, initializing firefly cursor");
+    window.initFireflyCursor();
+});
