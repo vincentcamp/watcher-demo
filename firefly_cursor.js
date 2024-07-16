@@ -1,9 +1,9 @@
+console.log("Firefly cursor script loaded");
+
 import * as Shox from "https://cdn.jsdelivr.net/npm/shox@1.1.3/src/Shox.js"
 import Olon from "https://cdn.jsdelivr.net/npm/olon@0.2.4/dist/Olon.min.js"
 import { UPDATE_VERT, UPDATE_FRAG, RENDER_VERT, RENDER_FRAG } from "./shader.js"
 import { random, min } from "./tools.js"
-
-console.log("Firefly cursor script loaded");
 
 const COLS = 80;
 const ROWS = 80;
@@ -16,8 +16,9 @@ let BORN_AMOUNT = 0;
 let ol;
 
 function initFireflyCursor() {
-    console.log("Initializing firefly cursor");
+    console.log("Starting initFireflyCursor function");
     const canvas = document.getElementById('firefly-canvas');
+    console.log("Canvas element:", canvas);
     if (!canvas) {
         console.error("Firefly canvas not found");
         return;
@@ -121,6 +122,9 @@ function initFireflyCursor() {
         console.error("Error in firefly cursor initialization:", error);
     }
 }
+
+// Expose the function to the global scope
+window.initFireflyCursor = initFireflyCursor;
 
 window.addEventListener('load', () => {
     console.log("Window loaded, initializing firefly cursor");
