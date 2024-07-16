@@ -6,7 +6,7 @@ import os
 import logging
 import json
 
-app = Flask(__name__, static_folder='public')
+app = Flask(__name__, static_folder='.', static_url_path='')
 
 # Set up logging
 logging.basicConfig(level=logging.DEBUG)
@@ -73,14 +73,13 @@ def format_timestamp(timestamp):
 
 @app.route('/')
 def index():
-    logger.debug(f"Serving index.html from {app.static_folder}")
-    return send_from_directory(app.static_folder, 'index.html')
+    return send_from_directory('.', 'index.html')
 
 @app.route('/<path:path>')
 def static_proxy(path):
     logger.debug(f"Attempting to serve static file: {path}")
     try:
-        return send_from_directory(app.static_folder, path)
+        return send_from_directory('.', path)
     except Exception as e:
         logger.error(f"Failed to serve static file {path}: {e}")
         return f"File not found: {path}", 404
