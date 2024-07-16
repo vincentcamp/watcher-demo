@@ -6,7 +6,11 @@ import os
 import logging
 import json
 
-app = Flask(__name__, static_folder='.', static_url_path='')
+# Get the directory of the current file (app.py)
+current_dir = os.path.dirname(os.path.abspath(__file__))
+
+# Initialize Flask app with the current directory as the template folder and static folder
+app = Flask(__name__, template_folder=current_dir, static_folder=current_dir)
 
 # Set up logging
 logging.basicConfig(level=logging.DEBUG)
