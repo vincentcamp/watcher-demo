@@ -5,6 +5,7 @@ from datetime import datetime, timedelta
 import os
 import logging
 import json
+from werkzeug.urls import url_quote  # Added this import
 
 app = Flask(__name__, static_folder='.', static_url_path='')
 
@@ -101,6 +102,7 @@ def image_page(id):
         item = collection.find_one({'_id': ObjectId(id)})
         if item:
             standardized_item = standardize_data(item)
+            # Use url_quote here if needed
             return render_template('image.html', item=standardized_item)
         return jsonify({"error": "Image not found"}), 404
     except Exception as e:
