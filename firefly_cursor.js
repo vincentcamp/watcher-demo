@@ -26,104 +26,73 @@ function initFireflyCursor() {
     try {
         ol = Olon(canvas);
         console.log("Olon initialized");
-    } catch (error) {
-        console.error("Error initializing Olon:", error);
-        return;
-    }
 
-    try {
         ol.blend({ sfactor: ol.SRC_ALPHA, dfactor: ol.ONE });
         ol.enableBlend();
         console.log("Blend mode set");
-    } catch (error) {
-        console.error("Error setting blend mode:", error);
-        return;
-    }
 
-    console.log("Creating shader programs");
-    const TFV = ["vPosition", "vAge", "vLife", "vVel"];
-    let updateProgram, renderProgram;
-    try {
-        updateProgram = ol.createProgram(UPDATE_VERT, UPDATE_FRAG, TFV);
-        renderProgram = ol.createProgram(RENDER_VERT, RENDER_FRAG);
+        const TFV = ["vPosition", "vAge", "vLife", "vVel"];
+        const updateProgram = ol.createProgram(UPDATE_VERT, UPDATE_FRAG, TFV);
+        const renderProgram = ol.createProgram(RENDER_VERT, RENDER_FRAG);
         console.log("Shader programs created successfully");
-    } catch (error) {
-        console.error("Error creating shader programs:", error);
-        return;
-    }
 
-    console.log("Setting up attributes and buffers");
-    const aPosition = { name: "aPosition", unit: "f32", size: 2 };
-    const aAge = { name: "aAge", unit: "f32", size: 1 };
-    const aLife = { name: "aLife", unit: "f32", size: 1 };
-    const aVel = { name: "aVel", unit: "f32", size: 2 };
-    const aCoord = { name: "aCoord", unit: "f32", size: 2 };
-    const aTexCoord = { name: "aTexCoord", unit: "f32", size: 2 };
+        const aPosition = { name: "aPosition", unit: "f32", size: 2 };
+        const aAge = { name: "aAge", unit: "f32", size: 1 };
+        const aLife = { name: "aLife", unit: "f32", size: 1 };
+        const aVel = { name: "aVel", unit: "f32", size: 2 };
+        const aCoord = { name: "aCoord", unit: "f32", size: 2 };
+        const aTexCoord = { name: "aTexCoord", unit: "f32", size: 2 };
 
-    const updateAttribs = [aPosition, aAge, aLife, aVel];
-    const renderAttribs = [aPosition, aAge, aLife];
-    const quadAttribs = [aCoord, aTexCoord];
+        const updateAttribs = [aPosition, aAge, aLife, aVel];
+        const renderAttribs = [aPosition, aAge, aLife];
+        const quadAttribs = [aCoord, aTexCoord];
 
-    const particleData = [];
-    for (var i = 0; i < MAX_AMOUNT; i++) {
-        const LIFE = random(MIN_AGE, MAX_AGE);
-        particleData.push(0, 0, LIFE + 1, LIFE, 0, 0);
-    }
-    const initData = ol.Data(particleData);
-    const quadData = ol.quadData();
+        const particleData = [];
+        for (let i = 0; i < MAX_AMOUNT; i++) {
+            const LIFE = random(MIN_AGE, MAX_AGE);
+            particleData.push(0, 0, LIFE + 1, LIFE, 0, 0);
+        }
+        const initData = ol.Data(particleData);
+        const quadData = ol.quadData();
 
-    let buffer0, buffer1, quadBuffer;
-    try {
-        buffer0 = ol.createBuffer(initData, ol.STREAM_DRAW);
-        buffer1 = ol.createBuffer(initData, ol.STREAM_DRAW);
-        quadBuffer = ol.createBuffer(quadData, ol.STATIC_DRAW);
+        const buffer0 = ol.createBuffer(initData, ol.STREAM_DRAW);
+        const buffer1 = ol.createBuffer(initData, ol.STREAM_DRAW);
+        const quadBuffer = ol.createBuffer(quadData, ol.STATIC_DRAW);
         console.log("Buffers created successfully");
-    } catch (error) {
-        console.error("Error creating buffers:", error);
-        return;
-    }
 
-    console.log("Creating VAOs");
-    const VAOConfig = (buffer, stride, attributes, divisor) => ({ buffer, stride, attributes, divisor });
-    let updateVAO0, updateVAO1, renderVAO0, renderVAO1;
-    try {
-        updateVAO0 = ol.createVAO(updateProgram, [VAOConfig(buffer0, 4 * 6, updateAttribs)]);
-        updateVAO1 = ol.createVAO(updateProgram, [VAOConfig(buffer1, 4 * 6, updateAttribs)]);
-        renderVAO0 = ol.createVAO(renderProgram, [
+        const VAOConfig = (buffer, stride, attributes, divisor) => ({ buffer, stride, attributes, divisor });
+        const updateVAO0 = ol.createVAO(updateProgram, [VAOConfig(buffer0, 4 * 6, updateAttribs)]);
+        const updateVAO1 = ol.createVAO(updateProgram, [VAOConfig(buffer1, 4 * 6, updateAttribs)]);
+        const renderVAO0 = ol.createVAO(renderProgram, [
             VAOConfig(buffer0, 4 * 6, renderAttribs, 1),
             VAOConfig(quadBuffer, 4 * 4, quadAttribs),
         ]);
-        renderVAO1 = ol.createVAO(renderProgram, [
+        const renderVAO1 = ol.createVAO(renderProgram, [
             VAOConfig(buffer1, 4 * 6, renderAttribs, 1),
             VAOConfig(quadBuffer, 4 * 4, quadAttribs),
         ]);
         console.log("VAOs created successfully");
-    } catch (error) {
-        console.error("Error creating VAOs:", error);
-        return;
-    }
 
-    const buffers = [buffer0, buffer1];
-    const updateVAOs = [updateVAO0, updateVAO1];
-    const renderVAOs = [renderVAO0, renderVAO1];
-    let [read, write] = [0, 1];
+        const buffers = [buffer0, buffer1];
+        const updateVAOs = [updateVAO0, updateVAO1];
+        const renderVAOs = [renderVAO0, renderVAO1];
+        let [read, write] = [0, 1];
 
-    let mouseX = 0;
-    let mouseY = 0;
+        let mouseX = 0;
+        let mouseY = 0;
 
-    document.addEventListener('mousemove', (e) => {
-        mouseX = e.clientX / window.innerWidth * 2 - 1;
-        mouseY = -(e.clientY / window.innerHeight * 2 - 1);
-    });
+        document.addEventListener('mousemove', (e) => {
+            mouseX = e.clientX / window.innerWidth * 2 - 1;
+            mouseY = -(e.clientY / window.innerHeight * 2 - 1);
+        });
 
-    console.log("Starting render loop");
-    ol.render(() => {
-        BORN_AMOUNT = min(MAX_AMOUNT, BORN_AMOUNT + 10);
+        console.log("Starting render loop");
+        ol.render(() => {
+            BORN_AMOUNT = min(MAX_AMOUNT, BORN_AMOUNT + 10);
 
-        ol.clearColor(0, 0, 0, 0);
-        ol.clearDepth();
+            ol.clearColor(0, 0, 0, 0);
+            ol.clearDepth();
 
-        try {
             ol.use({
                 program: updateProgram,
             }).run(() => {
@@ -145,12 +114,12 @@ function initFireflyCursor() {
             });
 
             [read, write] = [write, read];
-        } catch (error) {
-            console.error("Error in render loop:", error);
-        }
-    });
+        });
 
-    console.log("Firefly cursor initialized");
+        console.log("Firefly cursor initialized");
+    } catch (error) {
+        console.error("Error in firefly cursor initialization:", error);
+    }
 }
 
 window.addEventListener('load', () => {

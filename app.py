@@ -30,54 +30,61 @@ except Exception as e:
 
 def standardize_data(item):
     """Standardize the data format to match Image 1 layout."""
-    if 'payload' in item:
-        payload = item['payload']
+    if isinstance(item, dict):
+        payload = item.get('payload', {})
         if isinstance(payload, str):
-            payload = json.loads(payload)
+            try:
+                payload = json.loads(payload)
+            except json.JSONDecodeError:
+                logger.error(f"Failed to parse payload JSON: {payload}")
+                payload = {}
         
-        standardized = {
+        timestamp = item.get('timestamp') or payload.get('timestamp')
+        if timestamp and isinstance(timestamp, str):
+            try:
+                timestamp = int(float(timestamp))
+            except ValueError:
+                logger.error(f"Invalid timestamp format: {timestamp}")
+                timestamp = None
+
+        return {
             "_id": str(item.get('_id', ObjectId())),
-            "tlid": payload.get('tlid'),
-            "tn": payload.get('tn'),
-            "content": payload.get('content'),
-            "image_url": payload.get('image_url'),
-            "timestamp": item.get('timestamp') or payload.get('timestamp'),
-            "formatted_timestamp": format_timestamp(item.get('timestamp') or payload.get('timestamp')),
-            "orgId": payload.get('orgId'),
-            "eui": payload.get('eui'),
-            "channel": payload.get('channel')
+            "tlid": payload.get('tlid') or item.get('tlid'),
+            "tn": payload.get('tn') or item.get('tn'),
+            "content": payload.get('content') or item.get('content'),
+            "image_url": payload.get('image_url') or item.get('image_url'),
+            "timestamp": timestamp,
+            "formatted_timestamp": format_timestamp(timestamp),
+            "orgId": payload.get('orgId') or item.get('orgId'),
+            "eui": payload.get('eui') or item.get('eui'),
+            "channel": payload.get('channel') or item.get('channel')
         }
     else:
-        standardized = {
-            "_id": str(item.get('_id', ObjectId())),
-            "tlid": item.get('tlid'),
-            "tn": item.get('tn'),
-            "content": item.get('content'),
-            "image_url": item.get('image_url'),
-            "timestamp": item.get('timestamp'),
-            "formatted_timestamp": format_timestamp(item.get('timestamp')),
-            "orgId": item.get('orgId'),
-            "eui": item.get('eui'),
-            "channel": item.get('channel')
-        }
-    
-    return standardized
-    
+        logger.error(f"Invalid item type: {type(item)}")
+        return {}
+
 def format_timestamp(timestamp):
     if timestamp:
-        timestamp_seconds = timestamp / 1000.0
-        dt_utc = datetime.utcfromtimestamp(timestamp_seconds)
-        dt_china = dt_utc + timedelta(hours=8)
-        return dt_china.strftime("%Y-%m-%d %H:%M:%S CST")
+        try:
+            timestamp_seconds = timestamp / 1000.0
+            dt_utc = datetime.utcfromtimestamp(timestamp_seconds)
+            dt_china = dt_utc + timedelta(hours=8)
+            return dt_china.strftime("%Y-%m-%d %H:%M:%S CST")
+        except Exception as e:
+            logger.error(f"Failed to format timestamp {timestamp}: {e}")
     return None
 
 @app.route('/')
 def index():
-    items = list(collection.find())
-    logger.debug(f"Retrieved {len(items)} items from the database")
-    standardized_items = [standardize_data(item) for item in items]
-    logger.debug(f"Standardized {len(standardized_items)} items")
-    return render_template('index.html', items=standardized_items)
+    try:
+        items = list(collection.find())
+        logger.debug(f"Retrieved {len(items)} items from the database")
+        standardized_items = [standardize_data(item) for item in items]
+        logger.debug(f"Standardized {len(standardized_items)} items")
+        return render_template('index.html', items=standardized_items)
+    except Exception as e:
+        logger.error(f"Error in index route: {e}")
+        return "An error occurred", 500
 
 @app.route('/<path:path>')
 def static_proxy(path):
@@ -90,31 +97,47 @@ def static_proxy(path):
 
 @app.route('/api/image/<id>')
 def image_page(id):
-    item = collection.find_one({'_id': ObjectId(id)})
-    if item:
-        standardized_item = standardize_data(item)
-        return render_template('image.html', item=standardized_item)
-    return jsonify({"error": "Image not found"}), 404
+    try:
+        item = collection.find_one({'_id': ObjectId(id)})
+        if item:
+            standardized_item = standardize_data(item)
+            return render_template('image.html', item=standardized_item)
+        return jsonify({"error": "Image not found"}), 404
+    except Exception as e:
+        logger.error(f"Error in image_page route: {e}")
+        return "An error occurred", 500
 
 @app.route('/api/receive_data', methods=['POST'])
 def receive_data():
     if request.method == 'POST':
-        new_data = request.json
-        standardized_data = standardize_data(new_data)
-        result = collection.insert_one(standardized_data)
-        return jsonify({"status": "success", "message": "Data received", "id": str(result.inserted_id)}), 200
+        try:
+            new_data = request.json
+            standardized_data = standardize_data(new_data)
+            result = collection.insert_one(standardized_data)
+            return jsonify({"status": "success", "message": "Data received", "id": str(result.inserted_id)}), 200
+        except Exception as e:
+            logger.error(f"Error in receive_data route: {e}")
+            return jsonify({"status": "error", "message": str(e)}), 500
 
 @app.route('/api/test')
 def test():
-    items = list(collection.find())
-    standardized_items = [standardize_data(item) for item in items]
-    return jsonify(standardized_items)
+    try:
+        items = list(collection.find())
+        standardized_items = [standardize_data(item) for item in items]
+        return jsonify(standardized_items)
+    except Exception as e:
+        logger.error(f"Error in test route: {e}")
+        return jsonify({"error": str(e)}), 500
 
 @app.route('/api/debug')
 def debug():
-    items = list(collection.find())
-    standardized_items = [standardize_data(item) for item in items]
-    return jsonify(standardized_items)
+    try:
+        items = list(collection.find())
+        standardized_items = [standardize_data(item) for item in items]
+        return jsonify(standardized_items)
+    except Exception as e:
+        logger.error(f"Error in debug route: {e}")
+        return jsonify({"error": str(e)}), 500
 
 if __name__ == '__main__':
     logger.info(f"Static folder is set to: {app.static_folder}")
