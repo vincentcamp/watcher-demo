@@ -113,6 +113,15 @@
                 card.style.animation = 'fadeInUp 0.5s ease forwards';
             });
         });
+        window.addEventListener('load', () => {
+            console.log("Window loaded, checking for firefly cursor script");
+            if (window.initFireflyCursor) {
+                console.log("Firefly cursor script found, initializing");
+                window.initFireflyCursor();
+            } else {
+                console.error("Firefly cursor script not found or not loaded properly");
+            }
+        });
     </script>
     <script src="/firefly_cursor.js" type="module"></script>
 </body>
