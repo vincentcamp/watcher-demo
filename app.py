@@ -36,7 +36,7 @@ def standardize_data(item):
             payload = json.loads(payload)
         
         standardized = {
-            "_id": item.get('_id', str(ObjectId())),
+            "_id": str(item.get('_id', ObjectId())),
             "tlid": payload.get('tlid'),
             "tn": payload.get('tn'),
             "content": payload.get('content'),
@@ -49,7 +49,7 @@ def standardize_data(item):
         }
     else:
         standardized = {
-            "_id": item.get('_id', str(ObjectId())),
+            "_id": str(item.get('_id', ObjectId())),
             "tlid": item.get('tlid'),
             "tn": item.get('tn'),
             "content": item.get('content'),
@@ -73,7 +73,11 @@ def format_timestamp(timestamp):
 
 @app.route('/')
 def index():
-    return send_from_directory('.', 'index.html')
+    items = list(collection.find())
+    logger.debug(f"Retrieved {len(items)} items from the database")
+    standardized_items = [standardize_data(item) for item in items]
+    logger.debug(f"Standardized {len(standardized_items)} items")
+    return render_template('index.html', items=standardized_items)
 
 @app.route('/<path:path>')
 def static_proxy(path):
@@ -84,19 +88,12 @@ def static_proxy(path):
         logger.error(f"Failed to serve static file {path}: {e}")
         return f"File not found: {path}", 404
 
-@app.route('/api/', methods=['GET'])
-def api_index():
-    items = list(collection.find())
-    standardized_items = [standardize_data(item) for item in items]
-    links = [f"/image/{str(item['_id'])}" for item in standardized_items]
-    return jsonify({'links': links, 'items': standardized_items})
-
-@app.route('/api/image/<id>', methods=['GET'])
+@app.route('/api/image/<id>')
 def image_page(id):
     item = collection.find_one({'_id': ObjectId(id)})
     if item:
         standardized_item = standardize_data(item)
-        return jsonify(standardized_item)
+        return render_template('image.html', item=standardized_item)
     return jsonify({"error": "Image not found"}), 404
 
 @app.route('/api/receive_data', methods=['POST'])
@@ -107,7 +104,7 @@ def receive_data():
         result = collection.insert_one(standardized_data)
         return jsonify({"status": "success", "message": "Data received", "id": str(result.inserted_id)}), 200
 
-@app.route('/api/test', methods=['GET'])
+@app.route('/api/test')
 def test():
     items = list(collection.find())
     standardized_items = [standardize_data(item) for item in items]
