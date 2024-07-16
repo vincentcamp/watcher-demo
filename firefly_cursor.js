@@ -134,19 +134,33 @@ async function initFireflyCursor() {
 
         console.log("Firefly cursor initialized");
 
-        // Set up resize event listener
+        // Set up resize event listener after initialization
         window.addEventListener('resize', handleResize);
+        
+        // Initial resize to ensure correct size
+        handleResize();
     } catch (error) {
         console.error("Error in firefly cursor initialization:", error);
     }
 }
 
 function handleResize() {
-    if (ol && typeof ol.resize === 'function') {
-        console.log("Resizing canvas");
-        ol.resize(window.innerWidth, window.innerHeight);
+    const canvas = document.getElementById('firefly-canvas');
+    if (canvas) {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+        
+        if (ol && typeof ol.resize === 'function') {
+            console.log("Resizing canvas using Olon's resize method");
+            ol.resize(window.innerWidth, window.innerHeight);
+        } else {
+            console.log("Olon resize method not available, manually updating canvas size");
+            if (ol && typeof ol.viewport === 'function') {
+                ol.viewport(0, 0, canvas.width, canvas.height);
+            }
+        }
     } else {
-        console.error("Unable to resize: ol object not properly initialized or resize method not available");
+        console.error("Canvas element not found");
     }
 }
 
