@@ -19,19 +19,13 @@ if not MONGODB_URI:
     raise ValueError("MONGODB_URI environment variable is not set")
 
 try:
-    # Use a non-SRV URI if possible
-    if MONGODB_URI.startswith('mongodb+srv://'):
-        logger.warning("SRV URI detected. Attempting to use non-SRV URI.")
-        MONGODB_URI = MONGODB_URI.replace('mongodb+srv://', 'mongodb://')
-    
     client = MongoClient(MONGODB_URI, serverSelectionTimeoutMS=5000)
-    client.server_info()  # This will raise an exception if the connection fails
+    client.server_info()
     db = client['watcher_db']
     collection = db['images']
     logger.info("Successfully connected to MongoDB")
 except Exception as e:
     logger.error(f"Failed to connect to MongoDB: {e}")
-    logger.error("If using SRV URI, ensure dnspython is installed: pip install dnspython")
     raise
 
 def standardize_data(item):
